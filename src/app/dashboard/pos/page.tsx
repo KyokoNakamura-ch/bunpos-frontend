@@ -32,7 +32,7 @@ export default function POSPage() {
         fetchProductByCode(decodedText.trim());
         setScanning(false);
       },
-      (error) => {
+      (_, ) => {
         // エラー無視でOK
       }
     );
