@@ -25,18 +25,18 @@ export default function POSPage() {
 
     const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 }, false);
 
-    scanner.render(
-      (decodedText) => {
-        console.log("スキャン成功:", decodedText);
-        setCode(decodedText);
-        fetchProductByCode(decodedText.trim());
-        setScanning(false);
-      },
-      (_, ) => {
-        // エラー無視でOK
-      }
-    );
-
+scanner.render(
+  (decodedText) => {
+    console.log("スキャン成功:", decodedText);
+    setCode(decodedText);
+    fetchProductByCode(decodedText.trim());
+    setScanning(false);
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (error) => {
+    // エラー無視でOK
+  }
+);
     return () => {
       scanner.clear().catch(err => console.error(err));
     };
