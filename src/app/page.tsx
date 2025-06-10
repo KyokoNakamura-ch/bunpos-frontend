@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import './style.css';
 import './dashboard/pos/style.css'; // このパスのままでOK
 
 type CartItem = {
