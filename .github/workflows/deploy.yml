@@ -22,7 +22,10 @@ jobs:
         run: npm ci
 
       - name: Build Next.js app
-        run: npm run build
+        run: |
+          npm run build
+          cp -r .next/standalone/* .   # ← ★ここで server.js を直下に出す！
+          cp -r .next/static .next/standalone/.next  # ← 静的ファイルもコピー
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -32,4 +35,3 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
           clean: true
-
