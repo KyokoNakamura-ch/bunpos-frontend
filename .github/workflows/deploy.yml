@@ -18,14 +18,17 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set NEXT_PUBLIC_API_ENDPOINT from GitHub Secrets
+        run: echo "NEXT_PUBLIC_API_ENDPOINT=${{ secrets.NEXT_PUBLIC_API_ENDPOINT }}" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build Next.js app
         run: |
           npm run build
-          cp -r .next/standalone/* .   # ← ★ここで server.js を直下に出す！
-          cp -r .next/static .next/standalone/.next  # ← 静的ファイルもコピー
+          cp -r .next/standalone/* .
+          cp -r .next/static .next/standalone/.next
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -35,3 +38,4 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
           clean: true
+
