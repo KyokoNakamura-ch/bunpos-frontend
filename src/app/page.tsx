@@ -19,9 +19,13 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showTotal, setShowTotal] = useState(false);
   const [total, setTotal] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [tax, setTax] = useState(0);
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
+    console.log('API_ENDPOINT:', process.env.NEXT_PUBLIC_API_ENDPOINT); // ← 追加
+
     if (!scanning) return;
 
     Html5Qrcode.getCameras().then(cameras => {
@@ -66,20 +70,24 @@ export default function POSPage() {
 
   const fetchProductByCode = async (scannedCode: string) => {
     try {
+      console.log("🔍 API呼び出し開始:", scannedCode);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/product?code=${scannedCode}`);
       const data = await res.json();
+      console.log("📦 レスポンス受信:", data);
 
+      // メッセージがない or 空なら成功とみなす
       if (data && !data.message) {
-        console.log("商品補完成功（DB）:", data);
+        console.log("✅ 商品補完成功（DB）:", data);
         setName(data.name);
         setPrice(data.price.toString());
       } else {
+        console.warn("⚠ 商品が見つからない:", data.message);
         alert('商品が見つかりません（DB）');
         setName('');
         setPrice('');
       }
     } catch (error) {
-      console.error("商品取得エラー:", error);
+      console.error("❌ 商品取得エラー:", error);
       alert('サーバーエラーが発生しました');
     }
   };
@@ -102,9 +110,11 @@ export default function POSPage() {
   };
 
   const handlePurchase = () => {
-    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const tax = Math.floor(subtotal * 0.1);
-    setTotal(subtotal + tax);
+    const sub = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const calculatedTax = Math.floor(sub * 0.1);
+    setSubtotal(sub);
+    setTax(calculatedTax);
+    setTotal(sub + calculatedTax);
     setShowTotal(true);
     setCart([]);
   };
@@ -130,18 +140,34 @@ export default function POSPage() {
           placeholder="商品コード"
           value={code}
           onChange={e => setCode(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') fetchProductByCode(code.trim());
+          }}
+          onBlur={() => {
+            if (code) fetchProductByCode(code.trim());
+          }}
         /><br />
+
+        <button
+          onClick={() => fetchProductByCode(code.trim())}
+          style={{ background: '#ccc', padding: '0.5rem', marginBottom: '0.5rem' }}
+        >
+          商品を検索
+        </button><br />
+
         <input
           placeholder="商品名"
           value={name}
           onChange={e => setName(e.target.value)}
         /><br />
+
         <input
           placeholder="単価"
           type="number"
           value={price}
           onChange={e => setPrice(e.target.value)}
         /><br />
+
         <button
           onClick={addToCart}
           style={{ background: '#39f', color: 'white', padding: '0.5rem 1rem', marginTop: '0.5rem' }}
@@ -158,7 +184,7 @@ export default function POSPage() {
           <ul>
             {cart.map(item => (
               <li key={item.code}>
-                {item.name} ×{item.quantity} = {item.price * item.quantity}円
+                {item.name} ×{item.quantity} = 税抜: {item.price * item.quantity}円（税込: {Math.floor(item.price * item.quantity * 1.1)}円）
               </li>
             ))}
           </ul>
@@ -176,7 +202,9 @@ export default function POSPage() {
 
       {showTotal && (
         <div style={{ marginTop: '1rem', background: '#eef', padding: '1rem' }}>
-          <p>合計金額（税込）：{total}円</p>
+          <p>税抜合計：{subtotal}円</p>
+          <p>消費税：{tax}円</p>
+          <p><strong>税込合計：{total}円</strong></p>
           <p style={{ fontStyle: 'italic', color: '#666' }}>
             今日も文具が心を癒やす…お疲れ様でした🖊️
           </p>
@@ -186,3 +214,4 @@ export default function POSPage() {
     </main>
   );
 }
+
