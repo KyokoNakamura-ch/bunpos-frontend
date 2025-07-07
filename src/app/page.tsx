@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import './style.css';
-import './dashboard/pos/style.css'; // ← このままでOK
+import './dashboard/pos/style.css';
 
 type CartItem = {
   code: string;
@@ -21,13 +21,8 @@ export default function POSPage() {
   const [total, setTotal] = useState(0);
   const [subtotal, setSubtotal] = useState(0);
   const [tax, setTax] = useState(0);
-  const [scanning, setScanning] = useState(false);
 
-  useEffect(() => {
-    console.log('API_ENDPOINT:', process.env.NEXT_PUBLIC_API_ENDPOINT); // ← 追加
-
-    if (!scanning) return;
-
+  const handleStartScan = () => {
     Html5Qrcode.getCameras().then(cameras => {
       if (cameras && cameras.length) {
         console.log("カメラ一覧:", cameras.map(c => c.label));
@@ -46,7 +41,6 @@ export default function POSPage() {
             console.log("スキャン成功:", decodedText);
             setCode(decodedText);
             fetchProductByCode(decodedText.trim());
-            setScanning(false);
             html5QrCode.stop().then(() => html5QrCode.clear());
           },
           error => {
@@ -56,17 +50,11 @@ export default function POSPage() {
       } else {
         alert('カメラが見つかりません');
       }
+    }).catch(err => {
+      console.error("カメラ初期化失敗:", err);
+      alert('カメラへのアクセスに失敗しました。設定を確認してください。');
     });
-
-    return () => {
-      const scanner = new Html5Qrcode('reader');
-      try {
-        scanner.clear();
-      } catch (err) {
-        console.error(err);
-      }
-    };
-  }, [scanning]);
+  };
 
   const fetchProductByCode = async (scannedCode: string) => {
     try {
@@ -75,7 +63,6 @@ export default function POSPage() {
       const data = await res.json();
       console.log("📦 レスポンス受信:", data);
 
-      // メッセージがない or 空なら成功とみなす
       if (data && !data.message) {
         console.log("✅ 商品補完成功（DB）:", data);
         setName(data.name);
@@ -128,7 +115,7 @@ export default function POSPage() {
       />
 
       <button
-        onClick={() => setScanning(true)}
+        onClick={handleStartScan}
         style={{ background: '#9cf', padding: '1rem', marginBottom: '1rem' }}
       >
         スキャン（カメラ）
@@ -214,4 +201,5 @@ export default function POSPage() {
     </main>
   );
 }
+
 
